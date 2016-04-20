@@ -3042,7 +3042,7 @@ a.list-group-item:hover {
  * checkbox styles
  * ======================================================================== */
 .checkbox {
-  display: inline-block;
+  display: block;
   margin: 0 10px 0 0;
   cursor: pointer;
   font-weight: 300;

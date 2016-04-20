@@ -471,6 +471,11 @@
                                 <input type="checkbox" name="fluidLayout"{{#if fluidLayout}} checked{{/if}} /> <%= i18n.localize('fluid.layout') %>
                             </label>
                         </div>
+                       <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="hidden"{{#if ishidden}} checked{{/if}} /> <%= i18n.localize('hide.page') %>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </form>
