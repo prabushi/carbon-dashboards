@@ -1171,6 +1171,8 @@ $(function () {
         var toggleView = $('#toggle-dashboard-view');
         var anon = $('input[name=anon]', e);
         var fluidLayout = $('input[name=fluidLayout]', e);
+        var hidePage = $('input[name=hidePage]', e);
+        console.log('********* updatePageProperties...hidePage: '+hidePage);
         var hasAnonPages = checkForAnonPages(idVal);
         var fn = {
             id: function () {
@@ -1245,6 +1247,18 @@ $(function () {
             },
             fluidLayout: function () {
                 page.layout.fluidLayout = fluidLayout.is(':checked');
+            },
+            hidePage: function () {
+                page.hidePage = hidePage.is(':checked');
+                if (page.hidePage) {
+                    dashboard.hiddenPages.push(page.id);
+                    console.log('hide page');
+                } else {
+                    var hiddenPageIndex = 0;
+                    for(; hiddenPageIndex < dashboard.hiddenPages.length && dashboard.hiddenPages[hiddenPageIndex] != page.id ; hiddenPageIndex++);
+                    dashboard.hiddenPages.splice(hiddenPageIndex, 1);
+                    console.log('not hide page');
+                }
             }
         };
 
@@ -1657,7 +1671,11 @@ $(function () {
                             // if the landing page was deleted, make the first page to be the landing page
                             if (dashboard.pages.length) {
                                 if (pid == dashboard.landing) {
-                                    dashboard.landing = pages[0].id;
+                                    var tempIndex;
+                                    for(tempIndex = 0 ; pages[tempIndex].hidePage; tempIndex++);
+                                    if(tempIndex < pages.length) {
+                                        dashboard.landing = pages[tempIndex].id;
+                                    }
                                 }
                             } else {
                                 dashboard.landing = null;
@@ -1692,7 +1710,8 @@ $(function () {
                 landing: (dashboard.landing == page.id),
                 isanon: page.isanon,
                 isUserCustom: dashboard.isUserCustom,
-                fluidLayout: page.layout.fluidLayout || false
+                fluidLayout: page.layout.fluidLayout || false,
+                hidePage: page.hidePage || false
             })).on('change', 'input', function () {
                 if (updatePageProperties($(this).closest('.ues-page-properties'))) {
                     switchPage(page.id, pageType);
@@ -1915,6 +1934,7 @@ $(function () {
                     fluidLayout: false
                 },
                 isanon: false,
+                hidePage: false,
                 content: {
                     default: {},
                     anon: {}
@@ -2096,23 +2116,56 @@ $(function () {
         var currentPageIndex = 0;
         for (; currentPageIndex < dashboard.pages.length && dashboard.pages[currentPageIndex].id != pid;
                currentPageIndex++);
-        var hasPrevPage = currentPageIndex > 0;
-        var hasNextPage = currentPageIndex < dashboard.pages.length - 1;
-
-        $('.page-header').html(headerContent = designerHeadingHbs({
-            id: page.id,
-            title: page.title,
-            pageNumber: currentPageIndex + 1,
-            totalPages: dashboard.pages.length,
-            prev: {
-                available: hasPrevPage,
-                id: (hasPrevPage ? dashboard.pages[currentPageIndex - 1].id : '')
-            },
-            next: {
-                available: hasNextPage,
-                id: (hasNextPage ? dashboard.pages[currentPageIndex + 1].id : '')
+        var hasPrevPage = false;
+        var hasNextPage = false;
+        var nextPageIndex = '';
+        var prevPageIndex = '';
+        console.log("dashboard.pages[currentPageIndex].hidePage"+dashboard.pages[currentPageIndex].hidePage);
+        if(!dashboard.pages[currentPageIndex].hidePage) {
+            var tempPageIndex = currentPageIndex - 1;
+            if(tempPageIndex >= 0) {
+                for(; tempPageIndex >= 0 && dashboard.pages[tempPageIndex].hidePage ; tempPageIndex--);
+                if(prevPageIndex >= 0) {
+                    hasPrevPage = true;
+                    prevPageIndex = tempPageIndex;
+                }
             }
-        }));
+            tempPageIndex = currentPageIndex + 1;
+            if(tempPageIndex < dashboard.pages.length) {
+                for(; tempPageIndex < dashboard.pages.length && dashboard.pages[tempPageIndex].hidePage ; tempPageIndex++);
+                if(tempPageIndex < dashboard.pages.length) {
+                    hasNextPage = true;
+                    nextPageIndex = tempPageIndex;
+                }
+            }
+            //hasPrevPage = currentPageIndex > 0;
+            //hasNextPage = currentPageIndex < dashboard.pages.length - 1;
+        }
+        console.log("Next Page : "+nextPageIndex);
+        console.log("Previous Page : "+prevPageIndex);
+
+        if(!page.hidePage) {
+            $('.page-header').html(headerContent = designerHeadingHbs({
+                id: page.id,
+                title: page.title,
+                pageNumber: currentPageIndex + 1,
+                totalPages: dashboard.pages.length - dashboard.hiddenPages.length,
+                prev: {
+                    available: hasPrevPage,
+                    id: (hasPrevPage ? prevPageIndex : '')
+                },
+                next: {
+                    available: hasNextPage,
+                    id: (hasNextPage ? nextPageIndex : '')
+                }
+            }));
+        } else {
+            $('.page-header').html(headerContent = designerHeadingHbs({
+                id: page.id,
+                title: page.title
+            }));
+        }
+
 
         ues.dashboards.render($('.gadgets-grid'), dashboard, pid, pageType, function (err) {
             $('.gadgets-grid').find('.ues-component').each(function () {
@@ -2224,7 +2277,15 @@ $(function () {
     var initDashboard = function (db, page) {
         dashboard = (ues.global.dashboard = db);
         var pages = dashboard.pages;
+        //create an array to store the indexes of hidden pages
+        console.log("Designer.js out**");
+        if(dashboard.hiddenPages === undefined) {
+            console.log("Designer.js in**");
+            dashboard.hiddenPages = [];
+        }
+
         if (pages.length > 0) {
+            console.log("**********check is this design panel or up");
             renderPage(page || db.landing || pages[0].id);
         } else {
             renderPage(null)
