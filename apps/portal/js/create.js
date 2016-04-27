@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * Functionality of the Create Dashboard defined in create.js.
  * */
@@ -23,7 +22,7 @@ $(function () {
 
     /**
      * Show HTML modal.
-     * @param {String} content HTML content
+     * @param {String} content      HTML content
      * @param {function} beforeShow Function to be invoked just before showing the modal
      * @return {null}
      * @private
@@ -56,7 +55,7 @@ $(function () {
      * @private
      * */
     var generateUrl = function (title) {
-        title = title.substring(0, 100);
+        title = title.substring(0,100);
         return title.replace(/[^\w]/g, '-').toLowerCase();
     };
 
@@ -148,12 +147,15 @@ $(function () {
     // Bind event handlers for dashboard ID field
     $('#ues-dashboard-id').on("keypress", function (e) {
         return sanitizeOnKeyPress(this, e, /[^a-z0-9-\s]/gim);
-    }).on('keyup', function () {
+    }).on('keyup', function (e) {
         overridden = overridden || true;
         if ($(this).val()) {
             hideInlineError($(this), $("#id-error"));
         }
-        $(this).val(generateUrl($(this).val()));
+
+        // If the key released is not a generic key other than space (E.g - arrow keys, backspace, delete), update the URL field
+        if ((e.which == "number" && e.which > 0) || e.keyCode == 0 || e.keyCode == 32)
+            $(this).val(generateUrl($(this).val()));
     });
 
     // Bind event handlers for dashboard description field
@@ -181,7 +183,7 @@ $(function () {
                 contentType: "application/json",
                 success: function (data) {
                     showInformation("URL Already Exists",
-                        "A dashboard with same URL already exists. Please select a different dashboard URL.");
+                        "A dashboard with same URL already exists. Please enter a different dashboard URL.");
                 },
                 error: function (xhr) {
                     if (xhr.status == 404) {

@@ -86,8 +86,7 @@
     var hideGadget = function (sandbox) {
         sandbox.addClass('ues-hide-gadget');
         sandbox.find('.ues-component-body').hide();
-
-    }
+    };
 
     /**
      * Show Gadget the gadget
@@ -96,8 +95,7 @@
     var showGadget = function (sandbox) {
         sandbox.removeClass('ues-hide-gadget');
         sandbox.find('.ues-component-body').show();
-
-    }
+    };
 
     /**
      * Get a component ID.
@@ -186,7 +184,7 @@
      * @param {Object} json Layout object
      * @return {String} HTML markup
      */
-    var convertToDesignerLayout = function (json) {
+    var getGridstackLayout = function (json) {
         var componentBoxListHbs = Handlebars.compile($("#ues-component-box-list-hbs").html());
         var container = $('<div />').addClass('grid-stack');
         $(componentBoxListHbs(json)).appendTo(container);
@@ -211,22 +209,17 @@
         var content = page.content[pageType];
         var componentBoxContentHbs = Handlebars.compile($('#ues-component-box-content-hbs').html());
         // this is to be rendered only in the designer. in the view mode, the template is rendered in the server
-        if (isDesigner) {
-            element.html(convertToDesignerLayout(layout[0]));
-        }
+        element.html(getGridstackLayout(layout[0]));
+        
         // render gadget contents
         $('.ues-component-box').each(function (i, container) {
             container = $(container);
             // Calculate the data-height field which is required to render the gadget
-            if (isDesigner) {
-                var gsItem = container.closest('.grid-stack-item');
-                var node = gsItem.data('_gridstack_node');
-                var gsHeight = node ? node.height : parseInt(gsItem.attr('data-gs-height'));
-                var height = (gsHeight * 150) + ((gsHeight - 1) * 30);
-                container.attr('data-height', height);
-            } else {
-                container.attr('data-height', container.height());
-            }
+            var gsItem = container.closest('.grid-stack-item');
+            var node = gsItem.data('_gridstack_node');
+            var gsHeight = node ? node.height : parseInt(gsItem.attr('data-gs-height'));
+            var height = (gsHeight * 150) + ((gsHeight - 1) * 30);
+            container.attr('data-height', height);
             var id = container.attr('id');
             var hasComponent = content.hasOwnProperty(id) && content[id][0];
             // the component box content (the skeleton) should be added only in the designer mode and the view mode only

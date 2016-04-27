@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 $(function () {
     var dashboardsApi = ues.utils.tenantPrefix() + 'apis/dashboards';
     var rolesApi = ues.utils.relativePrefix() + 'apis/roles';
@@ -35,7 +34,7 @@ $(function () {
 
     /**
      * Show HTML modal.
-     * @param {String} content HTML content
+     * @param {String} content      HTML content
      * @param {function} beforeShow Function to be invoked just before showing the modal
      * @return {null}
      * @private
@@ -46,14 +45,15 @@ $(function () {
         if (beforeShow && typeof beforeShow === 'function') {
             beforeShow();
         }
+
         modalElement.modal();
     };
 
     /**
      * Show confirm message with yes/no buttons.
-     * @param {String} title Title of the confirmation box
-     * @param {String} message HTML content
-     * @param {function} ok Callback function for yes button
+     * @param {String} title    Title of the confirmation box
+     * @param {String} message  HTML content
+     * @param {function} ok     Callback function for yes button
      * @return {null}
      * @private
      */
@@ -85,24 +85,25 @@ $(function () {
         var properties = {};
         properties.text = text;
         if (ok || cancel) {
-            properties.buttons = [
-                {
-                    addClass: 'btn btn-primary', text: 'Ok', onClick: function ($noty) {
+            properties.buttons = [{
+                addClass: 'btn btn-primary',
+                text: 'Ok',
+                onClick: function ($noty) {
                     $noty.close();
                     if (ok) {
                         ok();
                     }
                 }
-                },
-                {
-                    addClass: 'btn btn-danger', text: 'Cancel', onClick: function ($noty) {
+            }, {
+                addClass: 'btn btn-danger',
+                text: 'Cancel',
+                onClick: function ($noty) {
                     $noty.close();
                     if (cancel) {
                         cancel();
                     }
                 }
-                }
-            ];
+            }];
         }
 
         if (timeout) {
@@ -173,7 +174,6 @@ $(function () {
             }
         }).error(function () {
             generateMessage("Error getting OAuth settings", null, null, "error", "topCenter", 2000);
-            console.log('error getting oauth settings');
         });
     };
 
@@ -201,7 +201,6 @@ $(function () {
         var viewers = permissions.viewers;
         if (!isExistingPermission(viewers, role)) {
             viewers.push(role);
-            saveDashboard();
             $('#ues-dashboard-settings').find('.ues-shared-view').append(sharedRoleHbs(role));
         }
         el.typeahead('val', '');
@@ -218,7 +217,6 @@ $(function () {
         var editors = permissions.editors;
         if (!isExistingPermission(editors, role)) {
             editors.push(role);
-            saveDashboard();
             $('#ues-dashboard-settings').find('.ues-shared-edit').append(sharedRoleHbs(role));
         }
         el.typeahead('val', '');
@@ -512,7 +510,7 @@ $(function () {
                     el.remove();
                 };
 
-                saveDashboard(removeElement);
+                removeElement();
             };
 
             if ((editors.length == 1 || (getNumberOfUserRolesInDashboard(editors) == 1
@@ -532,7 +530,7 @@ $(function () {
                 var removeElement = function () {
                     el.remove();
                 };
-                saveDashboard(removeElement);
+                removeElement();
             };
 
             if ((viewers.length == 1 || (getNumberOfUserRolesInDashboard(viewers) == 1
@@ -555,7 +553,6 @@ $(function () {
             } else {
                 hideInlineError($(this), $("#title-error"));
                 dashboard.title = $(this).val();
-                saveDashboard();
             }
         });
 
@@ -564,7 +561,6 @@ $(function () {
             return sanitizeOnKeyPress(this, e, /[^a-z0-9-.\s]/gim);
         }).on('change', function () {
             dashboard.description = $(this).val();
-            saveDashboard();
         });
 
         // Enable Oauth settings
@@ -586,6 +582,16 @@ $(function () {
         // Export dashboard
         $('#ues-dashboard-export').on('click', function () {
             exportDashboard();
+        });
+
+        // Save dashboard
+        $('#ues-dashboard-saveBtn').on('click', function () {
+            saveDashboard();
+        });
+
+        // Reset the changes
+        $('#ues-dashboard-cancelBtn').on('click', function(){
+            location.reload();
         });
     };
 

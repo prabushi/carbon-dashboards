@@ -13,62 +13,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+var RPC_GADGET_BUTTON_CALLBACK = "RPC_GADGET_BUTTON_CALLBACK";
 $(function () {
     /**
      * Gadget default view mode.
      * @const
      */
     var DASHBOARD_DEFAULT_VIEW = 'default';
-
     /**
      * Gadget full screen mode.
      * @const
      */
     var DASHBOARD_FULL_SCEEN_VIEW = 'full';
-
     /**
      * Gadget settings view mode.
      * @const
      */
     var DASHBOARD_SETTINGS_VIEW = 'settings';
-
     /**
      * Gadget container prefix.
      * @const
      */
     var CONTAINER_PREFIX = 'gadget-';
-
     var page;
-
     /**
      * Pre-compiling Handlebar templates
      */
     var componentToolbarHbs = Handlebars.compile($('#ues-component-actions-hbs').html());
     var gadgetSettingsViewHbs = Handlebars.compile($('#ues-gadget-setting-hbs').html());
-
     /**
      * Initializes the component toolbar.
      * @return {null}
      * @private
      */
     var initComponentToolbar = function () {
+        var viewer = $('.ues-components-grid');
+
+
+        //gadget title bar custom button function handler
+        viewer.on('click', '.ues-custom-action', function (e) {
+            var fid = $(this).closest('.ues-component-box').find('iframe').attr('id');
+            var action = $(this).attr('data-action');
+            gadgets.rpc.call(fid, RPC_GADGET_BUTTON_CALLBACK, null, action);
+        });
+
         // gadget maximization handler
-        $('.ues-components-grid').on('click', '.ues-component-full-handle', function (e) {
+        viewer.on('click', '.ues-component-full-handle', function (e) {
             var id = $(this).closest('.ues-component').attr('id');
             var component = findComponent(id);
             var componentBox = $(this).closest('.ues-component-box');
+            var gsContainer = $('.grid-stack');
+            var gsBlock = componentBox.parent();
             if (component.fullViewPoped) {
-                $('.ues-component-box').show();
                 // render normal view
-                // restore the normal view (remove the css class, restore the original height and remove the temporary
-                // attribute)
-                componentBox
-                    .removeClass('ues-component-fullview')
-                    .css('height', componentBox.attr('data-original-height'))
-                    .attr('data-height', componentBox.attr('data-original-height'))
-                    .removeAttr('data-original-height');
+                $('.ues-component-box').show();
+                // restore the original height and remove the temporary attribute
+                gsContainer.height(gsContainer.attr('data-orig-height')).removeAttr('data-orig-height');
+                gsBlock.removeClass('ues-component-fullview');
                 renderMaxView(component, DASHBOARD_DEFAULT_VIEW);
+                // modify the tooltip message and the maximize icon
                 $(this)
                     .attr('title', $(this).data('maximize-title'))
                     .find('i.fw')
@@ -76,16 +79,13 @@ $(function () {
                     .addClass('fw-expand');
                 component.fullViewPoped = false;
             } else {
-                $('.ues-component-box:not([id="' + componentBox.attr('id') + '"])').hide();
                 // render max view
-                // change the container height for the max view (including backing up the original height for
-                // restoration later)
-                componentBox
-                    .attr('data-original-height', componentBox.attr('data-height'))
-                    .addClass('ues-component-fullview')
-                    .css('height', ($(window).height() - 40) + 'px')
-                    .attr('data-height', ($(window).height() - 40));
+                $('.ues-component-box:not([id="' + componentBox.attr('id') + '"])').hide();
+                // backup the origin height and render the max view
+                gsContainer.attr('data-orig-height', gsContainer.height()).height('auto');
+                gsBlock.addClass('ues-component-fullview');
                 renderMaxView(component, DASHBOARD_FULL_SCEEN_VIEW);
+                // modify the tooltip message and the maximize icon
                 $(this)
                     .attr('title', $(this).data('minimize-title'))
                     .find('i.fw')
@@ -93,11 +93,12 @@ $(function () {
                     .addClass('fw-contract');
                 component.fullViewPoped = true;
             }
+            $('.nano').nanoScroller();
         });
 
         // gadget settings handler
-        $('.ues-components-grid').on('click', '.ues-component-settings-handle', function (e) {
-            e.preventDefault();
+        viewer.on('click', '.ues-component-settings-handle', function (event) {
+            event.preventDefault();
             var id = $(this).closest('.ues-component').attr('id');
             var component = findComponent(id);
             var componentContainer = $('#' + CONTAINER_PREFIX + id);
@@ -107,7 +108,6 @@ $(function () {
                     DASHBOARD_DEFAULT_VIEW : DASHBOARD_SETTINGS_VIEW));
                 return;
             }
-
             if (componentContainer.hasClass('ues-userprep-visible')) {
                 componentContainer.removeClass('ues-userprep-visible');
                 updateComponentProperties(componentContainer.find('.ues-sandbox'), component);
@@ -124,7 +124,7 @@ $(function () {
      * @returns {null}
      * @private
      */
-    var switchComponentView = function(component, view){
+    var switchComponentView = function (component, view) {
         component.viewOption = view;
         ues.components.update(component, function (err, block) {
             if (err) {
@@ -157,15 +157,47 @@ $(function () {
      */
     var renderComponentToolbar = function (component) {
         if (component) {
+            var configObj = {};
             var container = $('#' + component.id);
+            var noOfDefaultBtn = 0;
             var userPrefsExists = false;
             for (var key in component.content.options) {
                 if (component.content.options[key].type.toUpperCase() != 'HIDDEN') {
-                    userPrefsExists =  true;
+                    userPrefsExists = true;
                     break;
                 }
             }
+            if (userPrefsExists) {
+                configObj.isConfiguration = true;
+                noOfDefaultBtn = noOfDefaultBtn + 1;
+            }
             // anon dashboards doesn't have settings option
+            if (component.content.defaultButtonConfigs) {
+                if (component.content.defaultButtonConfigs.isMaximize) {
+                    noOfDefaultBtn = noOfDefaultBtn + 1;
+                }
+            } else {
+                configObj.isMaximize = true;
+            }
+            if (component.content.toolbarButtons) {
+                var customtoolbarOpt = component.content.toolbarButtons.custom || {};
+                for (var customBtn in customtoolbarOpt) {
+                    if (customtoolbarOpt.hasOwnProperty(customBtn)) {
+                        noOfDefaultBtn = noOfDefaultBtn + 1;
+                        var iconTypeCSS = 'css';
+                        var iconTypeImage = 'image';
+                        if (customtoolbarOpt[customBtn].iconType.toUpperCase() === iconTypeCSS.toUpperCase()) {
+                            customtoolbarOpt[customBtn].isTypeCSS = true;
+                        }
+                        if (customtoolbarOpt[customBtn].iconType.toUpperCase() === iconTypeImage.toUpperCase()) {
+                            customtoolbarOpt[customBtn].isTypeImage = true;
+                        }
+                    }
+                }
+            }
+            component.content.isDropDownView = noOfDefaultBtn > 3;
+            // anon dashboards doesn't have settings option
+            component.content.defaultButtonConfigs = configObj;
             component.content.userPrefsExists = userPrefsExists && (ues.global.dbType !== 'anon');
             container.find('.ues-component-actions').html($(componentToolbarHbs(component.content)));
         }
@@ -183,7 +215,6 @@ $(function () {
         var area;
         var component;
         var components;
-
         var content = (ues.global.dbType === 'anon' ? page.content.anon : page.content.default);
         for (area in content) {
             if (content.hasOwnProperty(area)) {
@@ -209,20 +240,26 @@ $(function () {
         if (allPages.length > 0) {
             page = (ues.global.page ? ues.global.page : allPages[0]);
         }
-
         for (var i = 0; i < allPages.length; i++) {
             if (ues.global.page == allPages[i].id) {
                 page = allPages[i];
             }
         }
-
-        ues.dashboards.render($('.gadgets-grid'), ues.global.dashboard, ues.global.page, ues.global.dbType, function() {
+        ues.dashboards.render($('.gadgets-grid'), ues.global.dashboard, ues.global.page, ues.global.dbType, function () {
             // render component toolbar for each components
             $('.ues-component-box .ues-component').each(function () {
                 var component = findComponent($(this).attr('id'));
                 renderComponentToolbar(component);
             });
+            $('.grid-stack').gridstack({
+                width: 12,
+                cellHeight: 50,
+                verticalMargin: 30,
+                disableResize: true,
+                disableDrag: true,
+            });
         });
+        $('.nano').nanoScroller();
     };
 
     initDashboard();
