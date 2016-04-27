@@ -1250,12 +1250,14 @@ $(function () {
             },
             hidePage: function () {
                 page.hidePage = hidePage.is(':checked');
+                var hiddenPageIndex = getHiddenPageIndex(dashboard.hiddenPages, page.id);
                 if (page.hidePage) {
-                    dashboard.hiddenPages.push(page.id);
-                    console.log('hide page');
+                    if(hiddenPageIndex == -1) {
+                        dashboard.hiddenPages.push(page.id);
+                        console.log('hide page');
+                    }
                 } else {
-                    var hiddenPageIndex = 0;
-                    for(; hiddenPageIndex < dashboard.hiddenPages.length && dashboard.hiddenPages[hiddenPageIndex] != page.id ; hiddenPageIndex++);
+                    //for(; hiddenPageIndex < dashboard.hiddenPages.length && dashboard.hiddenPages[hiddenPageIndex] != page.id ; hiddenPageIndex++);
                     dashboard.hiddenPages.splice(hiddenPageIndex, 1);
                     console.log('not hide page');
                 }
@@ -2148,7 +2150,7 @@ $(function () {
             $('.page-header').html(headerContent = designerHeadingHbs({
                 id: page.id,
                 title: page.title,
-                pageNumber: currentPageIndex + 1,
+                pageNumber: currentPageIndex + 1 - getNumberOfHiddenPagesBeforeCurrentPage(hiddenPages, currentPageIndex),
                 totalPages: dashboard.pages.length - dashboard.hiddenPages.length,
                 prev: {
                     available: hasPrevPage,
@@ -2592,3 +2594,24 @@ $('input[type=number]')
             input.val(input.attr('min'));
         }
     });
+
+function getHiddenPageIndex(hiddenPage, pageId) {
+    var temp;
+    for(temp = 0 ; temp < hiddenPage.length ; temp++) {
+        if(hiddenPage[temp] == pageId) {
+            return temp;
+        }
+    }
+    return -1;
+}
+
+function getNumberOfHiddenPagesBeforeCurrentPage(hiddenPage, pageId) {
+    var tempIndex;
+    var count = 0;
+    for(tempIndex = 0 ; tempIndex < hiddenPage ; hiddenPage++) {
+        if (hiddenPage[tempIndex] < pageId) {
+            count++;
+        }
+    }
+    return count;
+}
