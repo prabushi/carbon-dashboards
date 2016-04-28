@@ -21,9 +21,9 @@ $(function () {
     var activeComponent;
     var breadcrumbs = [];
     var storeCache = {
-            gadget: [],
-            widget: [],
-            layout: []
+        gadget: [],
+        widget: [],
+        layout: []
     };
     var nonCategoryKeyWord = "null";
     var designerScrollTop = 0;
@@ -178,11 +178,11 @@ $(function () {
      * @return {String} Unique gadget ID
      * @private
      */
-    var generateGadgetId = function(gadgetName) {
+    var generateGadgetId = function (gadgetName) {
         if (!gadgetIds) {
             // If gadget Ids list is not defined, then need to read all the gadgets and re-populate the index list.
-            gadgetIds = { };
-            $('.ues-component').each(function() {
+            gadgetIds = {};
+            $('.ues-component').each(function () {
                 var id = $(this).attr('id');
                 if (id) {
                     var parts = id.split('-');
@@ -195,7 +195,7 @@ $(function () {
                 }
             });
         }
-        
+
         if (!gadgetIds[gadgetName]) {
             gadgetIds[gadgetName] = 0;
         }
@@ -252,13 +252,13 @@ $(function () {
             .on('change', 'input[type=checkbox], select, textarea', function () {
                 var isCheckbox = false;
                 //if a checkbox got changed, disable it before updating properties
-                if(this.type === "checkbox"){
+                if (this.type === "checkbox") {
                     isCheckbox = true;
                     this.disabled = true;
                 }
                 updateComponentProperties($(this).closest('.ues-component-properties'));
                 //enable back the checkbox, after updating its properties
-                if(isCheckbox){
+                if (isCheckbox) {
                     this.disabled = false;
                 }
             })
@@ -509,6 +509,14 @@ $(function () {
     var removePage = function (pid, type, done) {
         var p = findPage(dashboard, pid);
         var pages = dashboard.pages;
+        if (p.hidePage) {
+            var hiddenPageIndex = getHiddenPageIndex(dashboard.hiddenPages, p.id);
+            if (hiddenPageIndex != -1) {
+                dashboard.hiddenPages.splice(hiddenPageIndex, 1);
+                console.log('*****delete hide page ' + dashboard.hiddenPages.length);
+            }
+
+        }
         var index = pages.indexOf(p);
         pages.splice(index, 1);
         if (page.id !== pid) {
@@ -720,7 +728,7 @@ $(function () {
                 hasComponent = true;
             }
 
-            showHtmlModal(confirmDeleteBlockHbs({ hasComponent: hasComponent }), function () {
+            showHtmlModal(confirmDeleteBlockHbs({hasComponent: hasComponent}), function () {
                 var designerModal = $('#designerModal');
                 designerModal.find('#btn-delete').on('click', function () {
                     var action = designerModal.find('.modal-body input[name="delete-option"]:checked').val();
@@ -820,7 +828,7 @@ $(function () {
      * @private
      */
     var createComponent = function (container, asset) {
-        var id =  generateGadgetId(asset.id);
+        var id = generateGadgetId(asset.id);
         var area = container.attr('id');
         pageType = pageType ? pageType : DEFAULT_DASHBOARD_VIEW;
         var content = page.content[pageType];
@@ -1234,7 +1242,7 @@ $(function () {
         var anon = $('input[name=anon]', e);
         var fluidLayout = $('input[name=fluidLayout]', e);
         var hidePage = $('input[name=hidePage]', e);
-        console.log('********* updatePageProperties...hidePage: '+hidePage);
+        console.log('********* updatePageProperties...hidePage: ' + hidePage);
         var hasAnonPages = checkForAnonPages(idVal);
         var fn = {
             id: function () {
@@ -1314,14 +1322,15 @@ $(function () {
                 page.hidePage = hidePage.is(':checked');
                 var hiddenPageIndex = getHiddenPageIndex(dashboard.hiddenPages, page.id);
                 if (page.hidePage) {
-                    if(hiddenPageIndex == -1) {
+                    if (hiddenPageIndex == -1) {
                         dashboard.hiddenPages.push(page.id);
                         console.log('hide page');
                     }
                 } else {
-                    //for(; hiddenPageIndex < dashboard.hiddenPages.length && dashboard.hiddenPages[hiddenPageIndex] != page.id ; hiddenPageIndex++);
-                    dashboard.hiddenPages.splice(hiddenPageIndex, 1);
-                    console.log('not hide page');
+                    if (hiddenPageIndex != -1) {
+                        dashboard.hiddenPages.splice(hiddenPageIndex, 1);
+                        console.log('not hide page size: ' + dashboard.hiddenPages.length);
+                    }
                 }
             }
         };
@@ -1737,39 +1746,42 @@ $(function () {
 
                 // delete dashboard page
                 var pid = $(this).attr('data-page-id');
+                if (pid == dashboard.landing && (dashboard.hiddenPages.length > 0) && ((dashboard.pages.length - dashboard.hiddenPages.length) == 1)) {
+                    showInformation("Cannot Delete the Landing Page", "Please select a landing page before deleting this page.");
+                } else {
+                    showConfirm('Deleting the page',
+                        'This will remove the page and all its content. Do you want to continue?',
+                        function () {
+                            removePage(pid, DEFAULT_DASHBOARD_VIEW, function (err) {
+                                var pages = dashboard.pages;
 
-                showConfirm('Deleting the page',
-                    'This will remove the page and all its content. Do you want to continue?',
-                    function () {
-                        removePage(pid, DEFAULT_DASHBOARD_VIEW, function (err) {
-                            var pages = dashboard.pages;
+                                updatePagesList(pages);
 
-                            updatePagesList(pages);
+                                // if the landing page was deleted, make the first page to be the landing page
+                                if (dashboard.pages.length) {
+                                    if (pid == dashboard.landing) {
+                                        var tempIndex;
+                                        for (tempIndex = 0; pages[tempIndex].hidePage; tempIndex++);
+                                        if (tempIndex < pages.length) {
+                                            dashboard.landing = pages[tempIndex].id;
+                                        }
+                                    }
+                                } else {
+                                    dashboard.landing = null;
 
-                            // if the landing page was deleted, make the first page to be the landing page
-                            if (dashboard.pages.length) {
-                                if (pid == dashboard.landing) {
-                                    var tempIndex;
-                                    for(tempIndex = 0 ; pages[tempIndex].hidePage; tempIndex++);
-                                    if(tempIndex < pages.length) {
-                                        dashboard.landing = pages[tempIndex].id;
+                                    // hide the sidebar if it is open
+                                    if ($('#left-sidebar').hasClass('toggled')) {
+                                        $('#btn-pages-sidebar').click();
                                     }
                                 }
-                            } else {
-                                dashboard.landing = null;
-
-                                // hide the sidebar if it is open
-                                if ($('#left-sidebar').hasClass('toggled')) {
-                                    $('#btn-pages-sidebar').click();
-                                }
-                            }
 
 
-                            // save the dashboard
-                            saveDashboard();
-                            renderPage(dashboard.landing);
+                                // save the dashboard
+                                saveDashboard();
+                                renderPage(dashboard.landing);
+                            });
                         });
-                    });
+                }
             });
 
         // dashboard pages list functions
@@ -2106,7 +2118,7 @@ $(function () {
             }
         }
 
-        var json = { blocks: serializedGrid };
+        var json = {blocks: serializedGrid};
         var id;
         var i;
         // find the current page index
@@ -2177,8 +2189,8 @@ $(function () {
             $('.gadgets-grid')
                 .html(noPagesHbs())
                 .find('#btn-add-page-empty').on('click', function () {
-                    showCreatePage();
-                });
+                showCreatePage();
+            });
 
             $('.page-header .page-actions').hide();
             $('#btn-sidebar-layouts, #btn-sidebar-gadgets').hide();
@@ -2222,20 +2234,20 @@ $(function () {
         var hasNextPage = false;
         var nextPageIndex = '';
         var prevPageIndex = '';
-        console.log("dashboard.pages[currentPageIndex].hidePage"+dashboard.pages[currentPageIndex].hidePage);
-        if(!dashboard.pages[currentPageIndex].hidePage) {
+        console.log("dashboard.pages[currentPageIndex].hidePage" + dashboard.pages[currentPageIndex].hidePage);
+        if (!dashboard.pages[currentPageIndex].hidePage) {
             var tempPageIndex = currentPageIndex - 1;
-            if(tempPageIndex >= 0) {
-                for(; tempPageIndex >= 0 && dashboard.pages[tempPageIndex].hidePage ; tempPageIndex--);
-                if(prevPageIndex >= 0) {
+            if (tempPageIndex >= 0) {
+                for (; tempPageIndex >= 0 && dashboard.pages[tempPageIndex].hidePage; tempPageIndex--);
+                if (prevPageIndex >= 0) {
                     hasPrevPage = true;
                     prevPageIndex = tempPageIndex;
                 }
             }
             tempPageIndex = currentPageIndex + 1;
-            if(tempPageIndex < dashboard.pages.length) {
-                for(; tempPageIndex < dashboard.pages.length && dashboard.pages[tempPageIndex].hidePage ; tempPageIndex++);
-                if(tempPageIndex < dashboard.pages.length) {
+            if (tempPageIndex < dashboard.pages.length) {
+                for (; tempPageIndex < dashboard.pages.length && dashboard.pages[tempPageIndex].hidePage; tempPageIndex++);
+                if (tempPageIndex < dashboard.pages.length) {
                     hasNextPage = true;
                     nextPageIndex = tempPageIndex;
                 }
@@ -2243,14 +2255,14 @@ $(function () {
             //hasPrevPage = currentPageIndex > 0;
             //hasNextPage = currentPageIndex < dashboard.pages.length - 1;
         }
-        console.log("Next Page : "+nextPageIndex);
-        console.log("Previous Page : "+prevPageIndex);
+        console.log("Next Page : " + nextPageIndex);
+        console.log("Previous Page : " + prevPageIndex);
 
-        if(!page.hidePage) {
+        if (!page.hidePage) {
             $('.page-header').html(headerContent = designerHeadingHbs({
                 id: page.id,
                 title: page.title,
-                pageNumber: currentPageIndex + 1 - getNumberOfHiddenPagesBeforeCurrentPage(hiddenPages, currentPageIndex),
+                pageNumber: currentPageIndex + 1 - getNumberOfHiddenPagesBeforeCurrentPage(dashboard.pages, currentPageIndex),
                 totalPages: dashboard.pages.length - dashboard.hiddenPages.length,
                 prev: {
                     available: hasPrevPage,
@@ -2259,12 +2271,14 @@ $(function () {
                 next: {
                     available: hasNextPage,
                     id: (hasNextPage ? nextPageIndex : '')
-                }
+                },
+                notHidePage: true
             }));
         } else {
             $('.page-header').html(headerContent = designerHeadingHbs({
                 id: page.id,
-                title: page.title
+                title: page.title,
+                notHidePage: false
             }));
         }
 
@@ -2389,7 +2403,7 @@ $(function () {
         var pages = dashboard.pages;
         //create an array to store the indexes of hidden pages
         console.log("Designer.js out**");
-        if(dashboard.hiddenPages === undefined) {
+        if (dashboard.hiddenPages === undefined) {
             console.log("Designer.js in**");
             dashboard.hiddenPages = [];
         }
@@ -2413,8 +2427,8 @@ $(function () {
                 customBannerExists: false
             };
 
-        var $placeholder = $('.ues-banner-placeholder'); 
-        var customDashboard = ues.global.dashboard.isUserCustom || false; 
+        var $placeholder = $('.ues-banner-placeholder');
+        var customDashboard = ues.global.dashboard.isUserCustom || false;
         var banner = ues.global.dashboard.banner;
         var bannerExists = banner.globalBannerExists || banner.customBannerExists;
         // create the view model to be passed to handlebar
@@ -2431,7 +2445,7 @@ $(function () {
         // display the image
         var bannerImage = $placeholder.find('.banner-image');
         if (bannerExists) {
-            bannerImage.css('background-image', 
+            bannerImage.css('background-image',
                 "url('" + bannerImage.data('src') + '?rand=' + Math.floor(Math.random() * 100000) + "')").show();
         } else {
             bannerImage.hide();
@@ -2459,16 +2473,16 @@ $(function () {
         $('.ues-banner-placeholder button').prop('disabled', true);
         $('.ues-dashboard-banner-loading').show();
 
-        var $placeholder = $('.ues-banner-placeholder'); 
-        var srcCanvas = document.getElementById('src-canvas'); 
-        var $srcCanvas = $(srcCanvas); 
-        var img = new Image(); 
-        var width = $placeholder.width(); 
+        var $placeholder = $('.ues-banner-placeholder');
+        var srcCanvas = document.getElementById('src-canvas');
+        var $srcCanvas = $(srcCanvas);
+        var img = new Image();
+        var width = $placeholder.width();
         var height = $placeholder.height();
         // remove previous cropper bindings to the canvas (this will remove all the created controls as well)
         $srcCanvas.cropper('destroy');
         // draw the selected image in the source canvas and initialize cropping
-        var srcCtx = srcCanvas.getContext('2d'); 
+        var srcCtx = srcCanvas.getContext('2d');
         var objectUrl = URL.createObjectURL(file);
         img.onload = function () {
             // draw the uploaded image on the canvas
@@ -2487,7 +2501,7 @@ $(function () {
                 cropBoxResizable: true,
                 crop: function (e) {
                     // draw the cropped image part in the dest. canvas and get the base64 encoded string
-                    var cropData = $srcCanvas.cropper('getData'); 
+                    var cropData = $srcCanvas.cropper('getData');
                     var destCanvas = document.getElementById('dest-canvas');
                     var destCtx = destCanvas.getContext('2d');
                     destCanvas.width = width;
@@ -2694,43 +2708,44 @@ function toggleHeading(source, show) {
 
 // Enforce min/max values of number fields
 $('input[type=number]').on('change', function () {
-        var input = $(this);
-        var max = input.attr('max');
-        var min = input.attr('min');
-        if (input.val().trim() == '') {
-            return;
-        }
-        var value = parseInt(input.val());
-        if (max !== '' && !isNaN(max) && value > parseInt(max)) {
-            input.val(max);
-        }
-        if (min !== '' && !isNaN(min) && value < parseInt(min)) {
-            input.val(min);
-        }
-    }).on('blur', function () {
-        var input = $(this);
-        if (input.val() == '' && input.attr('min')) {
-            input.val(input.attr('min'));
-        }
-    });
+    var input = $(this);
+    var max = input.attr('max');
+    var min = input.attr('min');
+    if (input.val().trim() == '') {
+        return;
+    }
+    var value = parseInt(input.val());
+    if (max !== '' && !isNaN(max) && value > parseInt(max)) {
+        input.val(max);
+    }
+    if (min !== '' && !isNaN(min) && value < parseInt(min)) {
+        input.val(min);
+    }
+}).on('blur', function () {
+    var input = $(this);
+    if (input.val() == '' && input.attr('min')) {
+        input.val(input.attr('min'));
+    }
+});
 
 function getHiddenPageIndex(hiddenPage, pageId) {
     var temp;
-    for(temp = 0 ; temp < hiddenPage.length ; temp++) {
-        if(hiddenPage[temp] == pageId) {
+    for (temp = 0; temp < hiddenPage.length; temp++) {
+        if (hiddenPage[temp] == pageId) {
             return temp;
         }
     }
     return -1;
 }
 
-function getNumberOfHiddenPagesBeforeCurrentPage(hiddenPage, pageId) {
-    var tempIndex;
+function getNumberOfHiddenPagesBeforeCurrentPage(pages, pageId) {
+    var tempIndex = 0;
     var count = 0;
-    for(tempIndex = 0 ; tempIndex < hiddenPage ; hiddenPage++) {
-        if (hiddenPage[tempIndex] < pageId) {
+    while (tempIndex < pageId) {
+        if (pages[tempIndex].hidePage) {
             count++;
         }
+        tempIndex++;
     }
     return count;
 }

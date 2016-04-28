@@ -65,7 +65,13 @@
         });
         showNavigation = (anonPageCount > 1);
     } else {
-        showNavigation = (pages.length > 1);
+        var pageCount = 0;
+        pages.forEach(function (p) {
+            if(!p.hidePage) {
+                pageCount++;
+            }
+        })
+        showNavigation = (pageCount > 1);
     }
 %>
 <html lang="en">
@@ -208,13 +214,15 @@
                                 if (showNavigation) {
                                     // render links
                                     pages.forEach(function (p) {
-                                        if (isAnonView || !user) {
-                                            if (p.isanon) {
-                                                // Anonymous viewing. So render only anonymous pages links.
+                                        if(!p.hidePage) {
+                                            if (isAnonView || !user) {
+                                                if (p.isanon) {
+                                                    // Anonymous viewing. So render only anonymous pages links.
+                                                    renderPageLink(p);
+                                                }
+                                            } else {
                                                 renderPageLink(p);
                                             }
-                                        } else {
-                                            renderPageLink(p);
                                         }
                                     });
                                 }
