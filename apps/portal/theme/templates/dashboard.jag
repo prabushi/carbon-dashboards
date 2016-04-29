@@ -59,7 +59,7 @@
     if (isAnonView || !user) {
         var anonPageCount = 0;
         pages.forEach(function(p) {
-            if (p.isanon) {
+            if (p.isanon && !p.isHiddenPage) {
                 anonPageCount++;
             }
         });
@@ -67,7 +67,7 @@
     } else {
         var pageCount = 0;
         pages.forEach(function (p) {
-            if(!p.hidePage) {
+            if(!p.isHiddenPage) {
                 pageCount++;
             }
         })
@@ -214,7 +214,7 @@
                                 if (showNavigation) {
                                     // render links
                                     pages.forEach(function (p) {
-                                        if(!p.hidePage) {
+                                        if(!p.isHiddenPage) {
                                             if (isAnonView || !user) {
                                                 if (p.isanon) {
                                                     // Anonymous viewing. So render only anonymous pages links.

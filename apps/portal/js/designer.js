@@ -509,13 +509,12 @@ $(function () {
     var removePage = function (pid, type, done) {
         var p = findPage(dashboard, pid);
         var pages = dashboard.pages;
-        if (p.hidePage) {
+        //if the page is a hidden page, update the hiddenPages array
+        if (p.isHiddenPage) {
             var hiddenPageIndex = getHiddenPageIndex(dashboard.hiddenPages, p.id);
             if (hiddenPageIndex != -1) {
                 dashboard.hiddenPages.splice(hiddenPageIndex, 1);
-                console.log('*****delete hide page ' + dashboard.hiddenPages.length);
             }
-
         }
         var index = pages.indexOf(p);
         pages.splice(index, 1);
@@ -1242,7 +1241,6 @@ $(function () {
         var anon = $('input[name=anon]', e);
         var fluidLayout = $('input[name=fluidLayout]', e);
         var hidePage = $('input[name=hidePage]', e);
-        console.log('********* updatePageProperties...hidePage: ' + hidePage);
         var hasAnonPages = checkForAnonPages(idVal);
         var fn = {
             id: function () {
@@ -1319,17 +1317,18 @@ $(function () {
                 page.layout.fluidLayout = fluidLayout.is(':checked');
             },
             hidePage: function () {
-                page.hidePage = hidePage.is(':checked');
+                page.isHiddenPage = hidePage.is(':checked');
                 var hiddenPageIndex = getHiddenPageIndex(dashboard.hiddenPages, page.id);
-                if (page.hidePage) {
+                //if the page is hidden and not already added to the hiddenPage array, add it to the array
+                if (page.isHiddenPage) {
                     if (hiddenPageIndex == -1) {
                         dashboard.hiddenPages.push(page.id);
-                        console.log('hide page');
                     }
                 } else {
+                    //if the page is a not a hidden page now and it is already in the hiddenPage array, remove it from
+                    // the array
                     if (hiddenPageIndex != -1) {
                         dashboard.hiddenPages.splice(hiddenPageIndex, 1);
-                        console.log('not hide page size: ' + dashboard.hiddenPages.length);
                     }
                 }
             }
@@ -1746,8 +1745,14 @@ $(function () {
 
                 // delete dashboard page
                 var pid = $(this).attr('data-page-id');
-                if (pid == dashboard.landing && (dashboard.hiddenPages.length > 0) && ((dashboard.pages.length - dashboard.hiddenPages.length) == 1)) {
-                    showInformation("Cannot Delete the Landing Page", "Please select a landing page before deleting this page.");
+
+                //if there are no any other non hidden pages to set as the landing page, alert the user
+                if (pid == dashboard.landing && (dashboard.hiddenPages.length > 0) &&
+                    ((dashboard.pages.length - dashboard.hiddenPages.length) == 1)) {
+
+                    showInformation("Cannot Delete the Landing Page", "Please select another landing page before " +
+                        "deleting this page.");
+
                 } else {
                     showConfirm('Deleting the page',
                         'This will remove the page and all its content. Do you want to continue?',
@@ -1761,7 +1766,7 @@ $(function () {
                                 if (dashboard.pages.length) {
                                     if (pid == dashboard.landing) {
                                         var tempIndex;
-                                        for (tempIndex = 0; pages[tempIndex].hidePage; tempIndex++);
+                                        for (tempIndex = 0; pages[tempIndex].isHiddenPage; tempIndex++);
                                         if (tempIndex < pages.length) {
                                             dashboard.landing = pages[tempIndex].id;
                                         }
@@ -1804,7 +1809,7 @@ $(function () {
                 isanon: page.isanon,
                 isUserCustom: dashboard.isUserCustom,
                 fluidLayout: page.layout.fluidLayout || false,
-                hidePage: page.hidePage || false
+                isHiddenPage: page.isHiddenPage || false
             })).on('change', 'input', function () {
                 if (updatePageProperties($(this).closest('.ues-page-properties'))) {
                     switchPage(page.id, pageType);
@@ -2038,7 +2043,7 @@ $(function () {
                     fluidLayout: false
                 },
                 isanon: false,
-                hidePage: false,
+                isHiddenPage: false,
                 content: {
                     default: {},
                     anon: {}
@@ -2234,31 +2239,31 @@ $(function () {
         var hasNextPage = false;
         var nextPageIndex = '';
         var prevPageIndex = '';
-        console.log("dashboard.pages[currentPageIndex].hidePage" + dashboard.pages[currentPageIndex].hidePage);
-        if (!dashboard.pages[currentPageIndex].hidePage) {
+
+        //if the page is a non hidden page, calculate previous and next pages excluding the hidden pages
+        if (!dashboard.pages[currentPageIndex].isHiddenPage) {
+            //calculate the previous page
             var tempPageIndex = currentPageIndex - 1;
             if (tempPageIndex >= 0) {
-                for (; tempPageIndex >= 0 && dashboard.pages[tempPageIndex].hidePage; tempPageIndex--);
+                for (; tempPageIndex >= 0 && dashboard.pages[tempPageIndex].isHiddenPage; tempPageIndex--);
                 if (prevPageIndex >= 0) {
                     hasPrevPage = true;
                     prevPageIndex = tempPageIndex;
                 }
             }
+            //calculate the next page
             tempPageIndex = currentPageIndex + 1;
             if (tempPageIndex < dashboard.pages.length) {
-                for (; tempPageIndex < dashboard.pages.length && dashboard.pages[tempPageIndex].hidePage; tempPageIndex++);
+                for (; tempPageIndex < dashboard.pages.length && dashboard.pages[tempPageIndex].isHiddenPage; tempPageIndex++);
                 if (tempPageIndex < dashboard.pages.length) {
                     hasNextPage = true;
                     nextPageIndex = tempPageIndex;
                 }
             }
-            //hasPrevPage = currentPageIndex > 0;
-            //hasNextPage = currentPageIndex < dashboard.pages.length - 1;
         }
-        console.log("Next Page : " + nextPageIndex);
-        console.log("Previous Page : " + prevPageIndex);
 
-        if (!page.hidePage) {
+        //set page header content
+        if (!page.isHiddenPage) {
             $('.page-header').html(headerContent = designerHeadingHbs({
                 id: page.id,
                 title: page.title,
@@ -2272,16 +2277,15 @@ $(function () {
                     available: hasNextPage,
                     id: (hasNextPage ? nextPageIndex : '')
                 },
-                notHidePage: true
+                nonHiddenPage: true
             }));
         } else {
             $('.page-header').html(headerContent = designerHeadingHbs({
                 id: page.id,
                 title: page.title,
-                notHidePage: false
+                nonHiddenPage: false
             }));
         }
-
 
         ues.dashboards.render($('.gadgets-grid'), dashboard, pid, pageType, function (err) {
 
@@ -2401,15 +2405,12 @@ $(function () {
 
         dashboard = (ues.global.dashboard = db);
         var pages = dashboard.pages;
-        //create an array to store the indexes of hidden pages
-        console.log("Designer.js out**");
+
+        //create an array to store the id of hidden pages
         if (dashboard.hiddenPages === undefined) {
-            console.log("Designer.js in**");
             dashboard.hiddenPages = [];
         }
-
         if (pages.length > 0) {
-            console.log("**********check is this design panel or up");
             renderPage(page || db.landing || pages[0].id);
         } else {
             renderPage(null)
@@ -2728,21 +2729,33 @@ $('input[type=number]').on('change', function () {
     }
 });
 
-function getHiddenPageIndex(hiddenPage, pageId) {
-    var temp;
-    for (temp = 0; temp < hiddenPage.length; temp++) {
-        if (hiddenPage[temp] == pageId) {
-            return temp;
+/**
+ * Return the hiddenPages array index of the input page id
+ * @param hiddenPages array of hidden pages
+ * @param pageId page id
+ * @returns {number} -1 if page doesn't exists, else return the array index of the page
+ */
+function getHiddenPageIndex(hiddenPages, pageId) {
+    var tempIndex;
+    for (tempIndex = 0; tempIndex < hiddenPages.length; tempIndex++) {
+        if (hiddenPages[tempIndex] == pageId) {
+            return tempIndex;
         }
     }
     return -1;
 }
 
+/**
+ * Return the number of hidden pages located before the current page within the array of pages
+ * @param pages array of pages
+ * @param pageId page id
+ * @returns {number} number of hidden pages before input page id
+ */
 function getNumberOfHiddenPagesBeforeCurrentPage(pages, pageId) {
     var tempIndex = 0;
     var count = 0;
     while (tempIndex < pageId) {
-        if (pages[tempIndex].hidePage) {
+        if (pages[tempIndex].isHiddenPage) {
             count++;
         }
         tempIndex++;

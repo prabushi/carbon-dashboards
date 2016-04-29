@@ -506,7 +506,7 @@
                     <div class="col-sm-12">
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="landing"{{#if landing}} checked disabled {{else if hidePage}} disabled{{/if}} /> <%= i18n.localize("use.as.landing") %>
+                                <input type="checkbox" name="landing"{{#if landing}} checked disabled {{else if isHiddenPage}} disabled{{/if}} /> <%= i18n.localize("use.as.landing") %>
                             </label>
                         </div>
                         <div class="checkbox {{#if isUserCustom}}hidden{{/if}}">
@@ -521,7 +521,7 @@
                         </div>
                        <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="hidePage"{{#if hidePage}} checked {{else if landing}} disabled{{/if}} /> <%= i18n.localize('hide.page') %>
+                                <input type="checkbox" name="hidePage"{{#if isHiddenPage}} checked {{else if landing}} disabled{{/if}} /> <%= i18n.localize('hide.page') %>
                             </label>
                         </div>
                     </div>
@@ -626,7 +626,7 @@
         </div>
         <div class="page-actions">
             <div class="btn-group">
-                {{#if notHidePage}}
+                {{#if nonHiddenPage}}
                     <button type="button" class="btn btn-default btn-bordered ues-switch-page-prev" data-page-id="{{prev/id}}" {{#if prev/available}}{{else}}disabled{{/if}}>
                         <i class="icon fw fw-left"></i>
                     </button>
