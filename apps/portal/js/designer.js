@@ -2239,25 +2239,26 @@ $(function () {
         var hasNextPage = false;
         var nextPageIndex = '';
         var prevPageIndex = '';
+        var pages = dashboard.pages;
 
         //if the page is a non hidden page, calculate previous and next pages excluding the hidden pages
-        if (!dashboard.pages[currentPageIndex].isHiddenPage) {
+        if (!pages[currentPageIndex].isHiddenPage) {
             //calculate the previous page
             var tempPageIndex = currentPageIndex - 1;
             if (tempPageIndex >= 0) {
-                for (; tempPageIndex >= 0 && dashboard.pages[tempPageIndex].isHiddenPage; tempPageIndex--);
+                for (; tempPageIndex >= 0 && pages[tempPageIndex].isHiddenPage; tempPageIndex--);
                 if (prevPageIndex >= 0) {
                     hasPrevPage = true;
-                    prevPageIndex = tempPageIndex;
+                    prevPageIndex = pages[tempPageIndex].id;
                 }
             }
             //calculate the next page
             tempPageIndex = currentPageIndex + 1;
-            if (tempPageIndex < dashboard.pages.length) {
-                for (; tempPageIndex < dashboard.pages.length && dashboard.pages[tempPageIndex].isHiddenPage; tempPageIndex++);
-                if (tempPageIndex < dashboard.pages.length) {
+            if (tempPageIndex < pages.length) {
+                for (; tempPageIndex < pages.length && pages[tempPageIndex].isHiddenPage; tempPageIndex++);
+                if (tempPageIndex < pages.length) {
                     hasNextPage = true;
-                    nextPageIndex = tempPageIndex;
+                    nextPageIndex = pages[tempPageIndex].id;
                 }
             }
         }
@@ -2267,8 +2268,8 @@ $(function () {
             $('.page-header').html(headerContent = designerHeadingHbs({
                 id: page.id,
                 title: page.title,
-                pageNumber: currentPageIndex + 1 - getNumberOfHiddenPagesBeforeCurrentPage(dashboard.pages, currentPageIndex),
-                totalPages: dashboard.pages.length - dashboard.hiddenPages.length,
+                pageNumber: currentPageIndex + 1 - getNumberOfHiddenPagesBeforeCurrentPage(pages, currentPageIndex),
+                totalPages: pages.length - dashboard.hiddenPages.length,
                 prev: {
                     available: hasPrevPage,
                     id: (hasPrevPage ? prevPageIndex : '')
