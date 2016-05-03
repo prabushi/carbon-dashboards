@@ -501,7 +501,7 @@ $(function () {
     /**
      * Remove and destroys a given page.
      * @param {String} pid      Page ID
-     * @param {type}            Type of the page
+     * @param {String} type     Type of the page
      * @param {function} done   Callback function
      * @return {null}
      * @private
@@ -509,13 +509,6 @@ $(function () {
     var removePage = function (pid, type, done) {
         var p = findPage(dashboard, pid);
         var pages = dashboard.pages;
-        //if the page is a hidden page, update the hiddenPages array
-        if (p.isHiddenPage) {
-            var hiddenPageIndex = getHiddenPageIndex(dashboard.hiddenPages, p.id);
-            if (hiddenPageIndex != -1) {
-                dashboard.hiddenPages.splice(hiddenPageIndex, 1);
-            }
-        }
         var index = pages.indexOf(p);
         pages.splice(index, 1);
         if (page.id !== pid) {
@@ -1248,8 +1241,7 @@ $(function () {
         var fn = {
             id: function () {
                 if (checkForPagesById(idVal) && page.id != idVal) {
-                    showInformation("URL Already Exists",
-                        "A page with entered URL already exists. Please select a different URL");
+                    showInformation(i18n_data_json["url.exist"], i18n_data_json["url.exist.message"]);
                     id.val(page.id);
                 } else {
                     page.id = idVal;
@@ -1260,8 +1252,7 @@ $(function () {
             },
             title: function () {
                 if (checkForPagesByTitle(titleVal) && page.title.toUpperCase() != titleVal.toUpperCase()) {
-                    showInformation("Title Already Exists",
-                        "A page with same title already exists. Please enter a different title");
+                    showInformation(i18n_data_json["title.exist"], i18n_data_json["title.exist.message"]);
                     title.val(page.title);
                     titleVal = page.title;
                 } else {
@@ -1272,8 +1263,8 @@ $(function () {
                 if (landing.is(':checked')) {
                     if (hasAnonPages && !page.isanon) {
                         landing.prop("checked", false);
-                        showInformation("Cannot Select This Page As Landing",
-                            "Please add an anonymous view to this page before select it as the landing page");
+                        showInformation(i18n_data_json["not.select.as.landing"],
+                            i18n_data_json["not.select.as.landing.message"]);
                     } else {
                         dashboard.landing = idVal;
                     }
@@ -1292,14 +1283,13 @@ $(function () {
                         $('#designer-view-mode li[data-view-mode=anon] a').click();
                     } else {
                         $(anon).prop("checked", false);
-                        showInformation("Cannot Make This Page Anonymous",
-                            "Please add an anonymous view to the landing page in order to make this page anonymous");
+                        showInformation(i18n_data_json["not.make.anon"], i18n_data_json["not.make.anon.message"]);
                     }
                 } else {
                     if (hasAnonPages && dashboard.landing == idVal) {
                         $(anon).prop("checked", true);
-                        showInformation("Cannot Remove The Anonymous View", "Cannot remove the anonymous view of " +
-                            "landing page when there are pages with anonymous views");
+                        showInformation(i18n_data_json["not.delete.anon.view"],
+                            i18n_data_json["not.delete.anon.view.message"]);
                     } else {
                         page.isanon = false;
 
@@ -1321,19 +1311,6 @@ $(function () {
             },
             hidePage: function () {
                 page.isHiddenPage = hidePage.is(':checked');
-                var hiddenPageIndex = getHiddenPageIndex(dashboard.hiddenPages, page.id);
-                //if the page is hidden and not already added to the hiddenPage array, add it to the array
-                if (page.isHiddenPage) {
-                    if (hiddenPageIndex == -1) {
-                        dashboard.hiddenPages.push(page.id);
-                    }
-                } else {
-                    //if the page is a not a hidden page now and it is already in the hiddenPage array, remove it from
-                    // the array
-                    if (hiddenPageIndex != -1) {
-                        dashboard.hiddenPages.splice(hiddenPageIndex, 1);
-                    }
-                }
             }
         };
 
@@ -1727,8 +1704,7 @@ $(function () {
                 // reset the dashboard
                 event.preventDefault();
                 var that = $(this);
-                showConfirm('Resetting the page',
-                    'This will remove all the customization added to the dashboard. Do you want to continue?',
+                showConfirm(i18n_data_json["page.reset"], i18n_data_json["page.reset.message"],
                     function () {
                         window.open(that.attr('href'), "_self");
                     });
@@ -1746,27 +1722,25 @@ $(function () {
             })
             .on('click', '.ues-delete-page', function () {
 
+                var pages = dashboard.pages;
                 // delete dashboard page
                 var pid = $(this).attr('data-page-id');
-
+                var hiddenPagesCount = getHiddenPagesCount(pages);
                 //if there are no any other non hidden pages to set as the landing page, alert the user
-                if (pid == dashboard.landing && (dashboard.hiddenPages.length > 0) &&
-                    ((dashboard.pages.length - dashboard.hiddenPages.length) == 1)) {
+                if (pid == dashboard.landing && (hiddenPagesCount > 0) &&
+                    ((pages.length - hiddenPagesCount) == 1)) {
 
-                    showInformation("Cannot Delete the Landing Page", "Please select another landing page before " +
-                        "deleting this page.");
+                    showInformation(i18n_data_json["not.delete.landing"], i18n_data_json["not.delete.landing.message"]);
 
                 } else {
-                    showConfirm('Deleting the page',
-                        'This will remove the page and all its content. Do you want to continue?',
+                    showConfirm(i18n_data_json["page.delete"], i18n_data_json["page.delete.message"],
                         function () {
                             removePage(pid, DEFAULT_DASHBOARD_VIEW, function (err) {
-                                var pages = dashboard.pages;
 
                                 updatePagesList(pages);
 
                                 // if the landing page was deleted, make the first page to be the landing page
-                                if (dashboard.pages.length) {
+                                if (pages.length) {
                                     if (pid == dashboard.landing) {
                                         var tempIndex;
                                         for (tempIndex = 0; pages[tempIndex].isHiddenPage; tempIndex++);
@@ -1969,8 +1943,7 @@ $(function () {
         initAddBlock();
 
         if (ues.global.dashboard.isEditorEnable && ues.global.dashboard.isUserCustom) {
-            showInformation("Received Edit Permission", "You have given edit permission for this dashboard. Please " +
-                "reset the dashboard to receive the permission.");
+            showInformation(i18n_data_json["edit.permission"], i18n_data_json["edit.permission.message"]);
         }
     };
 
@@ -2240,8 +2213,8 @@ $(function () {
                currentPageIndex++);
         var hasPrevPage = false;
         var hasNextPage = false;
-        var nextPageIndex = '';
-        var prevPageIndex = '';
+        var nextPageId = '';
+        var prevPageId = '';
         var pages = dashboard.pages;
 
         //if the page is a non hidden page, calculate previous and next pages excluding the hidden pages
@@ -2250,9 +2223,9 @@ $(function () {
             var tempPageIndex = currentPageIndex - 1;
             if (tempPageIndex >= 0) {
                 for (; tempPageIndex >= 0 && pages[tempPageIndex].isHiddenPage; tempPageIndex--);
-                if (prevPageIndex >= 0) {
+                if (tempPageIndex >= 0) {
                     hasPrevPage = true;
-                    prevPageIndex = pages[tempPageIndex].id;
+                    prevPageId = pages[tempPageIndex].id;
                 }
             }
             //calculate the next page
@@ -2261,7 +2234,7 @@ $(function () {
                 for (; tempPageIndex < pages.length && pages[tempPageIndex].isHiddenPage; tempPageIndex++);
                 if (tempPageIndex < pages.length) {
                     hasNextPage = true;
-                    nextPageIndex = pages[tempPageIndex].id;
+                    nextPageId = pages[tempPageIndex].id;
                 }
             }
         }
@@ -2272,14 +2245,14 @@ $(function () {
                 id: page.id,
                 title: page.title,
                 pageNumber: currentPageIndex + 1 - getNumberOfHiddenPagesBeforeCurrentPage(pages, currentPageIndex),
-                totalPages: pages.length - dashboard.hiddenPages.length,
+                totalPages: pages.length - getHiddenPagesCount(pages),
                 prev: {
                     available: hasPrevPage,
-                    id: (hasPrevPage ? prevPageIndex : '')
+                    id: (hasPrevPage ? prevPageId : '')
                 },
                 next: {
                     available: hasNextPage,
-                    id: (hasNextPage ? nextPageIndex : '')
+                    id: (hasNextPage ? nextPageId : '')
                 },
                 nonHiddenPage: true
             }));
@@ -2409,11 +2382,6 @@ $(function () {
 
         dashboard = (ues.global.dashboard = db);
         var pages = dashboard.pages;
-
-        //create an array to store the id of hidden pages
-        if (dashboard.hiddenPages === undefined) {
-            dashboard.hiddenPages = [];
-        }
         if (pages.length > 0) {
             renderPage(page || db.landing || pages[0].id);
         } else {
@@ -2734,19 +2702,19 @@ $('input[type=number]').on('change', function () {
 });
 
 /**
- * Return the hiddenPages array index of the input page id
- * @param hiddenPages array of hidden pages
- * @param pageId page id
- * @returns {number} -1 if page doesn't exists, else return the array index of the page
+ * Return the total number of hidden pages in the pages array
+ * @param pages array of hidden pages
+ * @returns {number} number of hidden pages
  */
-function getHiddenPageIndex(hiddenPages, pageId) {
+function getHiddenPagesCount(pages) {
+    var count = 0;
     var tempIndex;
-    for (tempIndex = 0; tempIndex < hiddenPages.length; tempIndex++) {
-        if (hiddenPages[tempIndex] == pageId) {
-            return tempIndex;
+    for (tempIndex = 0; tempIndex < pages.length; tempIndex++) {
+        if (pages[tempIndex].isHiddenPage) {
+            count++;
         }
     }
-    return -1;
+    return count;
 }
 
 /**

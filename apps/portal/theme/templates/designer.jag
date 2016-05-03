@@ -58,37 +58,47 @@
                 </div>
                 <div id="navbar" class="collapse navbar-collapse">
                     <ul class="nav navbar-nav">
-                        <% if(! dashboard.isUserCustom) { %>
-                        <% if(configs.isCreateGadgetEnable){%>
-                        <li>
-                            <a href="<%=tenantedUrlPrefix%>create-gadget">
+                        <% if (!dashboard.isUserCustom) { %>
+                        <%
+    if (configs.isCreateGadgetEnable) {
+        %>
+                                <li>
+                                    <a href="<%=tenantedUrlPrefix%>create-gadget">
                                 <span class="fw-stack">
                                     <i class="fw fw-add fw-stack-1x"></i>
                                     <i class="fw fw-circle-outline fw-stack-2x"></i>
-                                </span> <%=i18n.localize("create.gadget.label")%>
-                            </a>
-                        </li>
-                        <%}%>
-                        <li>
-                            <a href="<%=tenantedUrlPrefix%>dashboard-settings/<%=dashboard.id%>" id="dashboard-settings">
+                                </span> <%=i18n.localize("create.gadget.label")
+        %>
+                                    </a>
+                                </li>
+                                <%
+    }
+    %>
+                            <li>
+                                <a href="<%=tenantedUrlPrefix%>dashboard-settings/<%=dashboard.id%>" id="dashboard-settings">
                                 <span class="icon fw-stack">
                                     <i class="fw fw-settings fw-stack-1x"></i>
                                     <i class="fw fw-circle-outline fw-stack-2x"></i>
                                 </span>
-                                <%=i18n.localize("settings")%>
-                            </a>
-                        </li>
-                        <% } else { %>
-                        <li>
-                            <a href="<%=tenantedUrlPrefix%>dashboards/<%=dashboard.id%>?reset=true" class="ues-copy">
+                                <%=i18n.localize("settings")
+    %>
+                                </a>
+                            </li>
+                            <%
+} else {
+    %>
+                           <li>
+                               <a href="<%=tenantedUrlPrefix%>dashboards/<%=dashboard.id%>?reset=true" class="ues-copy">
                                 <span class="fw-stack">
                                     <i class="fw-refresh fw-stack-1x"></i>
                                     <i class="fw fw-circle-outline fw-stack-2x"></i>
                                 </span>
-                                <%=i18n.localize("reset")%>
-                            </a>
-                        </li>
-                        <% } %>
+                                <%=i18n.localize("reset")
+    %>
+                                </a>
+                            </li>
+                            <%
+} %>
                         <li id="ues-dashboard-preview-link">
                             <a href="#" class="ues-dashboard-preview">
                                 <span class="icon fw-stack">
@@ -506,7 +516,8 @@
                     <div class="col-sm-12">
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="landing"{{#if landing}} checked disabled {{else if isHiddenPage}} disabled{{/if}} /> <%= i18n.localize("use.as.landing") %>
+                                <input type="checkbox" name="landing"{{#if landing}} checked disabled
+                                    {{else if isHiddenPage}} disabled{{/if}} /> <%= i18n.localize("use.as.landing") %>
                             </label>
                         </div>
                         <div class="checkbox {{#if isUserCustom}}hidden{{/if}}">
@@ -519,9 +530,10 @@
                                 <input type="checkbox" name="fluidLayout"{{#if fluidLayout}} checked{{/if}} /> <%= i18n.localize('fluid.layout') %>
                             </label>
                         </div>
-                       <div class="checkbox">
+                        <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="hidePage"{{#if isHiddenPage}} checked {{else if landing}} disabled{{/if}} /> <%= i18n.localize('hide.page') %>
+                                <input type="checkbox" name="hidePage"{{#if isHiddenPage}} checked
+                                    {{else if landing}} disabled{{/if}} /> <%= i18n.localize('hide.page') %>
                             </label>
                         </div>
                     </div>
@@ -806,6 +818,30 @@
                         
     <script id="ues-no-components-hbs" type="text/x-handlebars-template">
         <%= i18n.localize("no.items.found") %>
+    </script>
+
+    <script>
+        var i18n_data = '{ ' +
+                        ' "not.delete.landing" : "<%= i18n.localize("not.delete.landing")%>",' +
+			            ' "not.delete.landing.message" : "<%= i18n.localize("not.delete.landing.message")%>",' +
+			            ' "url.exist" : "<%= i18n.localize("url.exist")%>",' +
+			            ' "url.exist.message" : "<%= i18n.localize("url.exist.message")%>",' +
+			            ' "title.exist" : "<%= i18n.localize("title.exist")%>",' +
+			            ' "title.exist.message" : "<%= i18n.localize("title.exist.message")%>",' +
+			            ' "not.select.as.landing" : "<%= i18n.localize("not.select.as.landing")%>",' +
+			            ' "not.select.as.landing.message" : "<%= i18n.localize("not.select.as.landing.message")%>",' +
+			            ' "not.make.anon" : "<%= i18n.localize("not.make.anon")%>",' +
+			            ' "not.make.anon.message" : "<%= i18n.localize("not.make.anon.message")%>",' +
+			            ' "not.delete.anon.view" : "<%= i18n.localize("not.delete.anon.view")%>",' +
+			            ' "not.delete.anon.view.message" : "<%= i18n.localize("not.delete.anon.view.message")%>",' +
+			            ' "edit.permission" : "<%= i18n.localize("edit.permission")%>",' +
+			            ' "edit.permission.message" : "<%= i18n.localize("edit.permission.message")%>",' +
+			            ' "page.reset" : "<%= i18n.localize("page.reset")%>",' +
+			            ' "page.reset.message" : "<%= i18n.localize("page.reset.message")%>",' +
+			            ' "page.delete" : "<%= i18n.localize("page.delete")%>",' +
+			            ' "page.delete.message" : "<%= i18n.localize("page.delete.message")%>"' +
+			            ' }';
+        var i18n_data_json = JSON.parse(i18n_data);
     </script>
 
     <!-- Jquery/Jquery UI JS -->
