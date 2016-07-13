@@ -114,10 +114,7 @@
                     <% include(utils.getThemeTemplatePath('templates/includes/project-title.jag')); %>
                 </div>
                 
-                <ul class="nav nav-pills nav-stacked pages">
-                    <div id="ues-pages">
-                    </div>
-                </ul>
+                <div id="ues-pages"><!-- dynamic content --></div>
                 
                 <hr>
                 
@@ -438,7 +435,7 @@
     </script>
 
     <script id="ues-menu-list-hbs" type="text/x-handlebars-template">
-        {{#traverseMenu menu false isAnonView user isHiddenMenu queryString}}{{/traverseMenu}}
+        {{#traverseMenu menu false isAnonView user isHiddenMenu queryString pageId}}{{/traverseMenu}}
     </script>
 
     <!-- Jquery/Jquery UI JS -->
@@ -570,13 +567,6 @@
                 $('.grid-stack-item[data-banner=true]')
                     .css("background-image", "url('<%=tenantedUrlPrefix%>banners/<%=dashboard.id%>')");
             }
-
-            // Toggle component box heading
-            $('.ues-component').hover(function() {
-                toggleHeading($(this), true);
-            }, function() {
-                toggleHeading($(this), false);
-            });
         });
         
         function toggleProductLogo(sidebarEventType){
@@ -587,17 +577,6 @@
             }
             else if (sidebarEventType == 'shown'){
                 logo.hide();
-            }
-        }
-
-        function toggleHeading(source, show) {
-            if (source.hasClass('ues-no-heading')) {
-                var heading = source.find('.ues-component-heading');
-                if (show) {
-                    heading.slideDown();
-                } else {
-                    heading.slideUp();
-                }
             }
         }
 
@@ -612,7 +591,8 @@
         //usage : in traverseMenu helper
         var user = <%= user %>,
             queryString = <%= stringify(queryString) %>,
-            isAnonView = <%= isAnonView %>;    
+            isAnonView = <%= isAnonView %>,  
+            pageId = <%= stringify(pageId) %>;
     </script>
 </body>
 </html>
